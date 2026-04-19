@@ -55,35 +55,25 @@ class word2vec:
         self.weight_in2-=self.lr*0.5*np.dot(self.input_o2.reshape(-1,1),self.error_hidden.reshape(1,-1))
         return loss  
 text_passage='Throughout our Junior year, my classmates and I have been worried about what colleges will see when they look at our whole life story reduced to a single 200-word essay. Will the golden word “success” form in their minds when they review our achievements? Or will they see the big word “fail” in red? The shadow of this mysterious institution steals away what success means to us.'
-wt = wordstranslate()
+wt=wordstranslate()
 wi,iw,co=wt.preprocess(text_passage)
-
 context=[]
 target_word=[]
-
 for i in range(len(co)-2):
-    context.append([
-        to_one_hot(co[i],len(iw)),
-        to_one_hot(co[i+2],len(iw))
-    ])
+    context.append([to_one_hot(co[i],len(iw)),to_one_hot(co[i+2],len(iw))])
     target_word.append(
         to_one_hot(co[i+1],len(iw))
     )
-
 network=word2vec(len(iw),100,0.025)
-
 for epoch in range(5):
     m=np.random.permutation(len(context))
     total_loss=0.0
-    
     for i in m:
         m1=context[i][0]
         m2=context[i][1]
         t1=target_word[i]
-        
         network.forward(m1,m2)
         total_loss+=network.backward(t1)
-    
     print("epoch:",epoch,"loss:",total_loss/len(context))
 #wi,iw,co=wordstranslate.preprocess(text_passage)
 #context=[]
