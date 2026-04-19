@@ -1,40 +1,27 @@
 import numpy as np
-#因为我不会找mnist,所以下面的部分就借助了ai
 #
-import os  #操作电脑文件夹，检查和创建文件夹
-import urllib.request #网上下载mnist数据集的
-#import ip#用来解压mnist
-import struct#因为mnist下载出来的是二进制，所以要翻译
+import os  
+import urllib.request 
+
+import struc
 def load_images(filename):
-    with open(os.path.join("data", filename), 'rb') as f: # 以二进制读取模式('rb')打开压缩包
-        # 读取文件头的前16个字节，解析出魔数、图片数量、行数、列数
-        # ">IIII" 是格式符，表示读取4个无符号整数
-        magic, num, rows, cols = struct.unpack(">IIII", f.read(16))
-        # 核心预处理代码：
-        # 1. f.read(): 读取剩下的所有二进制数据
-        # 2. dtype=np.uint8: 告诉 numpy 这些数据是 0-255 的整数
-        # 3. .reshape(num, rows * cols): 把数据拉直！原来是 28x28 的图，现在变成 1x784 的向量
-        # 4. / 255.0: 归一化。把 0-255 变成 0-1 之间的小数，神经网络更好学
-        images = np.frombuffer(f.read(), dtype=np.uint8).reshape(num, rows * cols)
-        return images.astype(np.float32) / 255.0
+    with open(os.path.join("data",filename),'rb')as f: 
+        magic,num,rows,cols=struct.unpack(">IIII",f.read(16))
+        images=np.frombuffer(f.read(),dtype=np.uint8).reshape(num,rows * cols)
+        return images.astype(np.float32)/255.0
 def load_labels(filename):
-    with open(os.path.join("data", filename), 'rb') as f:
-        magic, num = struct.unpack(">II", f.read(8)) # 标签文件头只有8字节，读数量和魔数
-        labels = np.frombuffer(f.read(), dtype=np.uint8) # 读取标签（比如 [5, 0, 4, ...]）
+    with open(os.path.join("data", filename),'rb')as f:
+        magic,num=struct.unpack(">II",f.read(8))
+        labels=np.frombuffer(f.read(),dtype=np.uint8) 
         return labels
-def to_one_hot(labels, num_classes=10):
-    # 这是一个很巧妙的 numpy 技巧
-    # np.eye(10) 会生成一个 10x10 的单位矩阵（对角线是1，其他是0）
-    # [labels] 相当于索引，把单位矩阵里对应的行取出来
-    return np.eye(num_classes)[labels.flatten()] #就是把10转为 0000 10 00000
+def to_one_hot(labels,num_classes=10):
+    return np.eye(num_classes)[labels.flatten()] 
 def load_mnist_data():
-    # 2. 加载数据
-    train_images = load_images("train-images.idx3-ubyte")
-    train_labels = load_labels("train-labels.idx1-ubyte")
-    test_images = load_images("t10k-images.idx3-ubyte")
-    test_labels = load_labels("t10k-labels.idx1-ubyte")
-    return train_images, train_labels, test_images, test_labels
-#
+    train_images=load_images("train-images.idx3-ubyte")
+    train_labels=load_labels("train-labels.idx1-ubyte")
+    test_images=load_images("t10k-images.idx3-ubyte")
+    test_labels=load_labels("t10k-labels.idx1-ubyte")
+    return train_images,train_labels,test_images,test_labels
 class Mnist:
     def __init__(self,input_node,hidden1_node,hidden2_node,output_node,lr):
         #初始化节点数目
