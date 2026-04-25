@@ -26,7 +26,7 @@ class lstm:
         self.c_new=self.c*self.forget+self.memory*self.input
         self.state_new=self.output*self.tanh(self.c_new)
         return self.state_new,self.c_new
-    def backword(self,d_state1,d_state2,c_error):
+    def backward(self,d_state1,d_state2,c_error):
         #梯度流动
         self.dc_new=c_error+self.output*(1-self.tanh(self.c_new)**2)*(d_state1+d_state2)
         self.d_output=self.tanh(self.c_new)*(d_state1+d_state2)
@@ -44,11 +44,7 @@ class lstm:
         self.dc_prev=self.dc
         self.d_state=np.dot(self.d_slice,self.weight_h.T)#(1,state)=(1,4state)*(4state,state)
         self.d_word=np.dot(self.d_slice,self.weight_x.T)
-        #更新权重
-        self.weight_x-=self.lr*np.dot(self.word.reshape(-1,1),self.d_slice)#(word,4state)=(word,1)*(1,4state)
-        self.weight_h-=self.lr*np.dot(self.state.reshape(-1,1),self.d_slice)#(state,4state)=(state,1)*(1,4state)
-        self.bias-=self.lr*self.d_slice
-        return self.dc_prev,self.d_state,self.d_word
+        return self.dc_prev,self.d_state,self.d_word,self.d_slice
 class timelstm:
     def __init__(self,hidden_state,wordlength,lr):
         self.hidden_state=hidden_state
@@ -81,7 +77,20 @@ class timelstm:
         self.error_hidden=np.zeros((self.T,self.hidden_state))
         dh=np.zeros((1,self.hidden_state))
         dc=np.zeros((1,self.hidden_state))
+        self.dw_h=np.zeros_like(self.weight_h)
+        self.dw_x=np.zeros_like(self.weight_x)
+        self.db=np.zeros_like(self.bias)
         for t in reversed(range(self.T)):#倒着循环  
             layer=self.layer[t]
-            dc,dh,self.error_hidden[t]=layer.backward(error_s[t],dh,dc)
+            dc,dh,self.error_hidden[t],d_slice=layer.backward(error_s[t].reshape(1,-1),dh,dc)
+            #在时间轴上进行梯度叠加,统一更新
+            self.dw_h+=np.dot(layer.state.reshape(-1,1),d_slice)#(state,4state)=(state,1)*(1,4state)
+            self.dw_x+=np.dot(layer.word.reshape(-1,1),d_slice)#(word,4state)=(word,1)*(1,4state)
+            self.db+=d_slice
+        #梯度裁剪
+        for grad in [self.dw_h,self.dw_x,self.db]:
+            np.clip(grad,-5,5,out=grad)#把梯度裁剪到(-5,5)这个区间内，out是就在原数组上进行修改
+        self.weight_h-=self.lr*self.dw_h
+        self.weight_x-=self.lr*self.dw_x
+        self.bias-=self.lr*self.db
         return self.error_hidden
