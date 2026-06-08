@@ -226,4 +226,4 @@ generate(1.1,30)
     #         print(f"text{i}")
     # #dataset处理
     # dataset=GPTDataset(tokens,max_len)
-    # loader=DataLoader(dataset,batch_size=8,shuffle=True)这样子没问题吧
+    # loader=DataLoader(dataset,batch_size=8,shuffle=True)
